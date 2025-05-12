@@ -1,0 +1,15 @@
+variables: Diferentes tipos que puede tener un dato; Numeros naturales = integers, numeros decimales = float, etc.
+funciones: Son partes de código que realizan una tarea en concreto. Cuando se usa una se dice que se "llama" a la función.
+recursividad: 
+bucles: También se llaman estructuras iterativas, son insturcciones que se repiten varias veces hasta que se cumple una condición para salir del bucle
+condicionales: Permiten tomar decisiones en torno a condiciones, if y else
+json: 
+xml: Solo me suena que es un lenguaje de marcas
+html: El lenguaje en el que están escritas las páginas webs básicas. Se usa con CSS para marcar estilos
+clases: 
+herencia:
+sql: El lenguaje con el que se hacen consultas en las bases de datos como mysql
+queries: Es un codigo que se introduce para buscar determinada información en una base de datos
+commit: Es como una funcion de git para poder guardar los cambios que haces en tu archivo con un comentario
+pull request: Para marcar un archivo para que esté listo para ser revisado y una vez revisado suba al proyecto principal
+API:
