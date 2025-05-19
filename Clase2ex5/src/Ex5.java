@@ -1,3 +1,4 @@
+//Invertir un array: Mostrar un array en orden inverso. 
 import java.util.Scanner;
 
 public class Ex5 {
