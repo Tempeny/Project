@@ -1,0 +1,220 @@
+/*1.Crea un índice para mejorar la búsqueda por el tipo de personaje.*/
+	CREATE INDEX idx_tipo_personaje ON personajes (Nombre, Tipo);
+/*2. Asegúrate de que no haya nombres duplicados en la tabla Reinos.*/
+	CREATE UNIQUE INDEX idx_duplicados ON Reinos (Nombre);
+/*3. Crea un índice en la columna Nivel para mejorar el rendimiento de consultas 
+	que busquen personajes según su nivel.*/
+    CREATE INDEX idx_personaje_nivel ON Personajes (Nivel);
+/*4. Crea un índice para facilitar búsquedas por nombre y título.*/
+	CREATE INDEX idx_nombre_titulo ON Personajes (Nombre, Titulo);
+/*5. Elimina el índice del nivel de personaje creado previamente.*/
+	DROP INDEX idx_personaje_nivel ON Personajes;
+
+/*1.Crear una función que devuelva el nombre del reino dado su ReinoID.*/
+ DELIMITER //
+CREATE FUNCTION ObtenerNombreReino(reino INT)
+RETURNS VARCHAR(100)
+BEGIN
+  DECLARE nombre VARCHAR(100);
+  SELECT Nombre INTO nombre FROM Reinos WHERE ReinoID = reino;
+  RETURN nombre;
+END;
+//
+DELIMITER ;
+
+/* 2. Crear una función que devuelva el nivel promedio de los personajes de un 
+reino específico. */
+
+DELIMITER //
+CREATE FUNCTION NivelPromedioPorReino(reino INT)
+RETURNS DECIMAL(5,2)
+BEGIN
+  DECLARE promedio DECIMAL(5,2);
+  SELECT AVG(Nivel) INTO promedio FROM Personajes WHERE ReinoID = reino;
+  RETURN promedio;
+END;
+//
+DELIMITER ;
+
+/* 3. Crear una función que devuelva el número de personajes pertenecientes a un 
+reino específico.*/ 
+
+DELIMITER //
+CREATE FUNCTION CantidadPersonajesReino(reino INT)
+RETURNS INT
+DETERMINISTIC
+BEGIN
+  DECLARE cantidad INT;
+  SELECT COUNT(*) INTO cantidad FROM Personajes WHERE ReinoID = reino;
+  RETURN cantidad;
+END;
+//
+DELIMITER ;
+
+/*4. Crear una función que devuelva la suma del poder de los artefactos de un 
+personaje.*/
+
+DELIMITER //
+CREATE FUNCTION SumaPoderArtefactos(personaje INT)
+RETURNS INT
+DETERMINISTIC
+BEGIN
+  DECLARE suma INT;
+  SELECT SUM(Poder) INTO suma FROM ArtefactosMagicos WHERE DueñoID = personaje;
+  RETURN IFNULL(suma, 0);
+END;
+//
+DELIMITER ;
+
+/* 5. Crear una función que devuelva TRUE o FALSE si existe algún personaje en un 
+reino con un nivel superior al valor especificado.*/
+
+DELIMITER //
+CREATE FUNCTION ExisteNivelSuperior(reino INT, nivel INT)
+RETURNS BOOLEAN
+DETERMINISTIC
+BEGIN
+  DECLARE existe INT;
+  SELECT COUNT(*) INTO existe FROM Personajes WHERE ReinoID = reino AND Nivel > nivel;
+  RETURN existe > 0;
+END;
+//
+DELIMITER ;
+
+/*1.Crear un procedimiento que inserte un nuevo reino en la tabla Reinos. */ 
+ 
+ DELIMITER //
+CREATE PROCEDURE InsertarReino(IN nombre VARCHAR(100), IN region VARCHAR(50), IN poblacion INT)
+BEGIN
+  INSERT INTO Reinos (Nombre, Región, Poblacion) VALUES (nombre, region, poblacion);
+END;
+//
+DELIMITER ;
+
+/* 2. Crear un procedimiento que actualice el nivel de un personaje dado su 
+PersonajeID.*/ 
+
+DELIMITER //
+CREATE PROCEDURE ActualizarNivelPersonaje(IN personajeID INT, IN nuevoNivel INT)
+BEGIN
+  UPDATE Personajes SET Nivel = nuevoNivel WHERE PersonajeID = personajeID;
+END;
+//
+DELIMITER ;
+
+/*3. Crear un procedimiento que elimine un artefacto mágico de la tabla 
+ArtefactosMagicos según su ArtefactoID.*/ 
+
+DELIMITER //
+CREATE PROCEDURE EliminarArtefacto(IN artefactoID INT)
+BEGIN
+  DELETE FROM ArtefactosMagicos WHERE ArtefactoID = artefactoID;
+END;
+//
+DELIMITER ;
+
+/*4. Crear un procedimiento que inserte un nuevo personaje solo si el ReinoID 
+existe en la tabla Reinos.*/
+
+DELIMITER //
+CREATE PROCEDURE InsertarPersonaje(
+    IN nombre VARCHAR(100), IN titulo VARCHAR(50), IN tipo VARCHAR(50),
+    IN nivel INT, IN reinoID INT
+)
+BEGIN
+  IF EXISTS (SELECT 1 FROM Reinos WHERE ReinoID = reinoID) THEN
+    INSERT INTO Personajes (Nombre, Titulo, Tipo, Nivel, ReinoID)
+    VALUES (nombre, titulo, tipo, nivel, reinoID);
+  END IF;
+END;
+//
+DELIMITER ;
+
+/*5. Crear un procedimiento que transfiera un artefacto de un personaje a otro.*/ 
+ DELIMITER //
+CREATE PROCEDURE TransferirArtefacto(
+    IN artefactoID INT, IN nuevoDuenoID INT
+)
+BEGIN
+  UPDATE ArtefactosMagicos SET DueñoID = nuevoDuenoID WHERE ArtefactoID = artefactoID;
+END;
+//
+DELIMITER ;
+ 
+/*6. Crear un procedimiento que inserte una nueva batalla y agregue participantes 
+a ella.*/
+DELIMITER //
+CREATE PROCEDURE InsertarBatallaYParticipantes(
+    IN nombreBatalla VARCHAR(100), IN ubicacion VARCHAR(100),
+    IN fecha DATE, IN resultado VARCHAR(20),
+    IN personaje1ID INT, IN rol1 VARCHAR(50),
+    IN personaje2ID INT, IN rol2 VARCHAR(50)
+)
+BEGIN
+  DECLARE nuevaBatallaID INT;
+  INSERT INTO Batallas (Nombre, Ubicacion, Fecha, Resultado)
+  VALUES (nombreBatalla, ubicacion, fecha, resultado);
+  
+  SET nuevaBatallaID = LAST_INSERT_ID();
+
+  INSERT INTO ParticipantesBatalla (BatallaID, PersonajeID, Rol)
+  VALUES (nuevaBatallaID, personaje1ID, rol1),
+         (nuevaBatallaID, personaje2ID, rol2);
+END;
+//
+DELIMITER ;
+
+/*7.Crear un procedimiento que aumente el nivel de todos los personajes de un 
+reino específico en un valor determinado.*/
+DELIMITER //
+CREATE PROCEDURE AumentarNivelReino(IN reinoID INT, IN incremento INT)
+BEGIN
+  UPDATE Personajes SET Nivel = Nivel + incremento WHERE ReinoID = reinoID;
+END;
+//
+DELIMITER ;
+
+/*8. Crear un procedimiento que registre una nueva batalla y actualice los niveles 
+de los personajes participantes según el resultado.*/
+DELIMITER //
+CREATE PROCEDURE RegistrarBatallaYActualizarNivel(
+    IN nombreBatalla VARCHAR(100), IN ubicacion VARCHAR(100), IN fecha DATE,
+    IN resultado VARCHAR(20),
+    IN personaje1ID INT, IN rol1 VARCHAR(50),
+    IN personaje2ID INT, IN rol2 VARCHAR(50)
+)
+BEGIN
+  DECLARE batallaID INT;
+  INSERT INTO Batallas (Nombre, Ubicacion, Fecha, Resultado)
+  VALUES (nombreBatalla, ubicacion, fecha, resultado);
+  
+  SET batallaID = LAST_INSERT_ID();
+
+  INSERT INTO ParticipantesBatalla (BatallaID, PersonajeID, Rol)
+  VALUES (batallaID, personaje1ID, rol1),
+         (batallaID, personaje2ID, rol2);
+
+  IF resultado = 'Victoria' THEN
+    UPDATE Personajes SET Nivel = Nivel + 1 WHERE PersonajeID IN (personaje1ID, personaje2ID);
+  END IF;
+END;
+//
+DELIMITER ;
+
+ /*9. Crear un procedimiento que asigne un artefacto mágico a todos los 
+personajes de un reino específico.*/
+
+ /*10. Crear un procedimiento que incremente nivel de todos los personajes 
+involucrados en una batalla específica.*/
+DELIMITER //
+CREATE PROCEDURE IncrementarNivelBatalla(IN batallaID INT)
+BEGIN
+  UPDATE Personajes
+  SET Nivel = Nivel + 1
+  WHERE PersonajeID IN (
+    SELECT PersonajeID FROM ParticipantesBatalla WHERE BatallaID = batallaID
+  );
+END;
+//
+DELIMITER ;
+
